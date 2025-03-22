@@ -1,5 +1,9 @@
 import logging
+import queue
 import socket
+import threading
+
+from dnslib import DNSRecord, DNSError
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -7,6 +11,9 @@ logger = logging.getLogger(__name__)
 MDNS_GROUP = "224.0.0.251"
 MDNS_PORT = 5353
 
+queue = queue.Queue()
+
+MDNS_ALIAS_FILE = "mdns-aliases"
 
 def get_aliases(filename):
     aliases = []
@@ -16,7 +23,7 @@ def get_aliases(filename):
     return aliases
 
 
-def create_mdns_socket():
+def create_mdns_socket() -> socket.socket:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 
     # Allows reusing the same IP address and port, even if it's still in TIME_WAIT state (i.e., recently closed).
@@ -46,6 +53,40 @@ def create_mdns_socket():
     return sock
 
 
+class MdnsResponder(threading.Thread):
+    def __init__(self, sock: socket.socket):
+        super().__init__(name="mdns-responder")
+        self.__aliases = get_aliases(MDNS_ALIAS_FILE)
+        self.__sock = sock
+
+
+    def create_response(self) -> DNSRecord:
+        pass
+
+    def run(self):
+        pass
+
+
+class MdnsListener(threading.Thread):
+    def __init__(self, sock: socket.socket):
+        super().__init__(name="mdns-listener")
+        self.__sock = sock
+
+    def run(self):
+        while True:
+            try:
+                data, addr = self.__sock.recvfrom(4096)
+                query = DNSRecord.parse(data)
+                if query.header.qr == 0:
+                    queue.put(query)
+            except DNSError:
+                logger.warning("Failed to decode received data.")
+                continue
+            except socket.timeout:
+                logger.warning("No mDNS packet received, still listening...")
+                continue
+
+
 def get_ip_addr():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -67,6 +108,9 @@ def get_hostname():
 
 
 if __name__ == "__main__":
-    logger.info(get_aliases("mdns-aliases"))
-    logger.info(get_ip_addr())
+    logger.info(get_aliases(MDNS_ALIAS_FILE))
+    # logger.info(get_ip_addr())
     logger.info(get_hostname())
+    s = create_mdns_socket()
+    MdnsListener(s).start()
+    MdnsResponder(s).start()
