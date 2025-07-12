@@ -26,7 +26,7 @@ public class Main {
         } catch (IOException |  InterruptedException e) {
             System.err.println(e.getMessage());
         } finally {
-            if (context.socket != null && !context.socket.isClosed()) socket.close();
+            if (context.socket != null && !context.socket.isClosed()) context.socket.close();
         }
     }
 
