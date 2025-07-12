@@ -5,9 +5,8 @@ import java.net.*;
 
 public class Main {
     public static void main(String[] args) {
-        MulticastSocket socket = null;
-        Thread listenerThread = null;
-        Thread responderThread = null;
+        Thread listenerThread;
+        Thread responderThread;
         SharedContext context = new SharedContext();
 
         try {
@@ -27,7 +26,7 @@ public class Main {
         } catch (IOException |  InterruptedException e) {
             System.err.println(e.getMessage());
         } finally {
-            if (socket != null && !socket.isClosed()) socket.close();
+            if (context.socket != null && !context.socket.isClosed()) socket.close();
         }
     }
 
