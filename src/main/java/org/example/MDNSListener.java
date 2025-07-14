@@ -1,5 +1,9 @@
 package org.example;
 
+import org.xbill.DNS.Message;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.Section;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
@@ -14,14 +18,35 @@ public class MDNSListener implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("MDNSListener started");
-
+        System.out.println("MDNSListener started...");
         MulticastSocket socket = context.socket;
-        byte[] buffer = new byte[1024];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
         while (context.running && !socket.isClosed()) {
+            try {
+                byte[] buffer = new byte[Constants.BUFFER_SIZE];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
 
+                byte[] data = packet.getData();
+                int length = packet.getLength();
+
+                // Parse raw DNS message
+                Message dnsMessage = new Message(data);
+                System.out.println("\n📨 Received DNS Message from " + packet.getAddress());
+                System.out.println("Header: " + dnsMessage.getHeader());
+
+                for (Record question : dnsMessage.getSection(Section.QUESTION)) {
+                    System.out.println("🔎 Question: " + question);
+                }
+
+                for (Record answer : dnsMessage.getSection(Section.ANSWER)) {
+                    System.out.println("✅ Answer: " + answer);
+                }
+                context.queue.offer(packet);
+            } catch (IOException e) {
+                e.printStackTrace();
+                break;
+            }
         }
 
         System.out.println("MDNSListener stopped.");
