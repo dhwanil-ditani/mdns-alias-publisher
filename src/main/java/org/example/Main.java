@@ -9,7 +9,7 @@ public class Main {
         Thread listenerThread;
         Thread responderThread;
         SharedContext context = new SharedContext();
-
+        System.out.println("Mdns Alias Publisher started...");
         try {
             context.socket = getSocket();
 
@@ -20,21 +20,18 @@ public class Main {
             }));
 
             MDNSListener listener = new MDNSListener(context);
-            MDNSResponder responder = new MDNSResponder(context);
+//            MDNSResponder responder = new MDNSResponder(context);
 
             listenerThread = new Thread(listener);
-            responderThread = new Thread(responder);
+//            responderThread = new Thread(responder);
 
             listenerThread.start();
-            responderThread.start();
+//            responderThread.start();
 
-            listenerThread.join();
-            responderThread.join();
-        } catch (IOException |  InterruptedException e) {
-            System.err.println(e.getMessage());
-        } finally {
-            System.out.println("Closing Socket...");
-            if (context.socket != null && !context.socket.isClosed()) context.socket.close();
+//            listenerThread.join();
+//            responderThread.join();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
     }
 

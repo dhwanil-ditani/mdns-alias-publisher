@@ -28,7 +28,6 @@ public class MDNSListener implements Runnable {
                 socket.receive(packet);
 
                 byte[] data = packet.getData();
-                int length = packet.getLength();
 
                 // Parse raw DNS message
                 Message dnsMessage = new Message(data);
@@ -42,9 +41,8 @@ public class MDNSListener implements Runnable {
                 for (Record answer : dnsMessage.getSection(Section.ANSWER)) {
                     System.out.println("✅ Answer: " + answer);
                 }
-                context.queue.offer(packet);
             } catch (IOException e) {
-                e.printStackTrace();
+                System.err.println(e.getMessage());
                 break;
             }
         }
